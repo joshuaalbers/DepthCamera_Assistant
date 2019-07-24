@@ -24,9 +24,9 @@ bl_info = {
 
 import bpy
 
-from . depthcam_assist_operator import DepthCamera_Assistant_Operator
-from . depthcam_assist_panel import DepthCamera_Assistant_Panel
+from . depthcam_assist_operator import DEPTHCAMASSIST_OT_Operator
+from . depthcam_assist_panel import DEPTHCAMASSIST_PT_Panel
 
-classes = (DepthCamera_Assistant_Operator, DepthCamera_Assistant_Panel)
+classes = (DEPTHCAMASSIST_OT_Operator, DEPTHCAMASSIST_PT_Panel)
 
 register, unregister = bpy.utils.register_classes_factory(classes)
