@@ -23,10 +23,73 @@ bl_info = {
 }
 
 import bpy
+import math
 
-from . depthcam_assist_operator import DEPTHCAMASSIST_OT_Operator
-from . depthcam_assist_panel import DEPTHCAMASSIST_PT_Panel
+from bpy.props import (
+	StringProperty,
+	BoolProperty,
+    FloatProperty,
+	EnumProperty,
+	PointerProperty,
+	)
 
-classes = (DEPTHCAMASSIST_OT_Operator, DEPTHCAMASSIST_PT_Panel)
+from bpy.types import (
+	AddonPreferences,
+	PropertyGroup,
+	)
 
-register, unregister = bpy.utils.register_classes_factory(classes)
+class DCA_Properties(PropertyGroup):
+    distance_min: FloatProperty(
+        name="Minimum distance", 
+        description="Minimum distance to be included in processing",
+        subtype='DISTANCE',
+        default=0.0,
+        min=0.0, # meters
+        max=15.0,
+        precision=5
+    )
+
+    distance_max: FloatProperty(
+        name="Maximum distance", 
+        description="Maximum distance to be included in processing",
+        subtype='DISTANCE',
+        default=15.0,
+        min=0.0, # meters
+        max=15.0,
+        precision=5
+    )
+
+    distance_threshold: FloatProperty(
+        name="Distance threshold",
+        description="Maximum distance between points for mesh construction",
+        subtype='DISTANCE',
+        default=0.030, # meters
+        min=0.0,
+        max=1.0,
+        precision=5,
+    )
+
+    object_name: StringProperty(
+        name="Object name",
+        description="Name of object to be created",
+        default="DepthCam",
+    )
+
+from . depthcam_assist_operator import DCA_OT_Operator
+from . depthcam_assist_panel import DCA_PT_Panel
+
+classes = (
+    DCA_OT_Operator,
+    DCA_PT_Panel,
+    DCA_Properties,
+    )
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+    bpy.types.Scene.dca = PointerProperty(type=DCA_Properties)
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)

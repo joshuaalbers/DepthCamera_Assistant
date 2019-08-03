@@ -1,7 +1,7 @@
 import bpy
 
-class DEPTHCAMASSIST_PT_Panel(bpy.types.Panel):
-    bl_idname = "DepthCamera_Assistant_Panel"
+class DCA_PT_Panel(bpy.types.Panel):
+    bl_idname = "DCA_PT_Assistant_Panel"
     bl_label = "Depth Camera Assistant Panel"
     bl_category = "Depth Camera Assistant"
     bl_space_type = "VIEW_3D"
@@ -9,6 +9,20 @@ class DEPTHCAMASSIST_PT_Panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        scene = context.scene
+        dca = scene.dca
+
+        row = layout.row()
+        row.prop(dca, "distance_min", text="")
+
+        row = layout.row()
+        row.prop(dca, "distance_max", text="")
+
+        row = layout.row()
+        row.prop(dca, "distance_threshold", text="")
+
+        row = layout.row()
+        row.prop(dca, "object_name", text="")
 
         row = layout.row()
         row.operator('view3d.depthcamera_assistant', text = "Depth Camera Assistant")
