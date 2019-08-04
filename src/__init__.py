@@ -75,11 +75,18 @@ class DCA_Properties(PropertyGroup):
         default="DepthCam",
     )
 
-from . depthcam_assist_operator import DCA_OT_Operator
+    file_path: StringProperty(
+        name="File path",
+        description="Path to depth camera file(s)",
+        subtype='FILE_PATH',
+        default="",
+    )
+
+from . depthcam_assist_operator import DCA_OT_Preview
 from . depthcam_assist_panel import DCA_PT_Panel
 
 classes = (
-    DCA_OT_Operator,
+    DCA_OT_Preview,
     DCA_PT_Panel,
     DCA_Properties,
     )

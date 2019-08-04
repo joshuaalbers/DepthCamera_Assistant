@@ -13,6 +13,9 @@ class DCA_PT_Panel(bpy.types.Panel):
         dca = scene.dca
 
         row = layout.row()
+        row.prop(dca, "file_path", text="")
+
+        row = layout.row()
         row.prop(dca, "distance_min", text="")
 
         row = layout.row()
@@ -25,4 +28,4 @@ class DCA_PT_Panel(bpy.types.Panel):
         row.prop(dca, "object_name", text="")
 
         row = layout.row()
-        row.operator('view3d.depthcamera_assistant', text = "Depth Camera Assistant")
+        row.operator("view3d.dca_preview", text = "Preview")
