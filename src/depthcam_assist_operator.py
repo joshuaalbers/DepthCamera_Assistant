@@ -26,16 +26,16 @@ class DCA_OT_Preview(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         dca = scene.dca
+        img=context.space_data.image
 
-        if dca.file_path == "":
-            print("You have to select an image file first.")
+        if img == None:
+            #print(context.space_data.image)
+            print("DEPTH CAM ASSIST: You have to select an image file first.")
             return {'FINISHED'}
 
         print("Depth Camera Assistant EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
-        scaleFactor = 100 # kludge to make the kinect data manageable
-        width = 640
-        height = 480
-        reduceFactor = 1 #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
+        scaleFactor = 100 # kludge to make the kinect data look right
+        reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
 
         limitedDissolve = False
         
@@ -51,18 +51,18 @@ class DCA_OT_Preview(bpy.types.Operator):
         #     os.makedirs(outpathRoot)
 
         #https://blender.stackexchange.com/questions/23433/how-to-assign-a-new-material-to-an-object-in-the-scene-from-python#23434
-        mat = bpy.data.materials.get("KinectMaterial")
+        mat = bpy.data.materials.get("ScanMaterial")
         if mat is None:
             # create material
-            mat = bpy.data.materials.new(name="KinectMaterial")
+            mat = bpy.data.materials.new(name="ScanMaterial")
 
         #set the cursor to the origin
         bpy.data.scenes['Scene'].cursor.location[0] = 0
         bpy.data.scenes['Scene'].cursor.location[1] = 0
         bpy.data.scenes['Scene'].cursor.location[2] = 0
 
-        bpy.data.images.load(inputPath)
-        img = bpy.data.images[bpy.path.basename(inputPath)]
+        #bpy.data.images.load(inputPath)
+        #img = bpy.data.images[bpy.path.basename(inputPath)]
         (width, height) = img.size
         img.colorspace_settings.name="Raw" #we don't want no colorspace conversion for our distance data
         pixels = zip_longest(*[iter(img.pixels)]*4)
@@ -129,6 +129,6 @@ class DCA_OT_Preview(bpy.types.Operator):
         #new_object = bpy.context.object
         bpy.ops.object.shade_smooth()
 
-        bpy.data.images.remove(img) #unload that image to make life better for everyone
+        #bpy.data.images.remove(img) #unload that image to make life better for everyone
 
         return {'FINISHED'}

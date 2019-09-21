@@ -17,9 +17,9 @@ bl_info = {
     "description" : "A plugin for converting depth camera images and sequences into geometry",
     "blender" : (2, 80, 0),
     "version" : (0, 0, 1),
-    "location" : "View3D",
+    "location" : "UV Editing",
     "warning" : "",
-    "category" : "Mesh"
+    "category" : "UV"
 }
 
 import bpy
@@ -28,6 +28,7 @@ import math
 from bpy.props import (
 	StringProperty,
 	BoolProperty,
+    IntProperty,
     FloatProperty,
 	EnumProperty,
 	PointerProperty,
@@ -39,6 +40,15 @@ from bpy.types import (
 	)
 
 class DCA_Properties(PropertyGroup):
+    reduce_factor: IntProperty(
+        name="Reduce factor",
+        description="Fraction by which to reduce resolution of calculated mesh",
+        subtype="FACTOR",
+        default=2, # 1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
+        min=1,
+        max=320
+    )
+
     distance_min: FloatProperty(
         name="Minimum distance", 
         description="Minimum distance to be included in processing",
