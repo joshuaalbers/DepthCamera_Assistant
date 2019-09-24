@@ -3,43 +3,34 @@ import math
 import os
 from itertools import zip_longest
 from pathlib import Path
+from . depthcam_assist_functions import convertDistanceToXYZ, image_sequence_resolve_all
 
 class DCA_OT_Preview(bpy.types.Operator):
-    bl_idname = "view3d.dca_preview"
+    bl_idname = "mesh.dca_preview"
     bl_label = "preview operator"
     bl_description = "Preview the mesh of the current frame"
-
-    def convertDistanceToXYZ(self, col, row, distance, w, h, unit_scale):
-        # fov numbers from http://stackoverflow.com/questions/17832238/kinect-intrinsic-parameters-from-field-of-view
-        hFov = math.radians(58.5)
-        vFov = math.radians(45.6)
-        xzFactor = math.tan(hFov/2) * 2
-        yzFactor = math.tan(vFov/2) * 2
-        normalizedX = col / w -0.5
-        normalizedY = 0.5 - row / h
-        x = normalizedX * xzFactor * distance * unit_scale
-        y = normalizedY * yzFactor * distance * unit_scale * -1 # gotta flip Y to appease the transform gods
-        z = distance * unit_scale
-        output = (x, z, y)
-        return( output )
 
     def execute(self, context):
         scene = context.scene
         dca = scene.dca
         img=context.space_data.image
+        imguser=context.space_data.image_user
+        frame_current=imguser.frame_current
 
         if img == None:
             #print(context.space_data.image)
             print("DEPTH CAM ASSIST: You have to select an image file first.")
             return {'FINISHED'}
-
-        print("Depth Camera Assistant EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
+        
+        listImages=image_sequence_resolve_all(img.filepath)
+        print("DEPTH CAM ASSIST: ", imguser.frame_start, imguser.frame_duration)
+        print("DEPTH CAM ASSIST: EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
         scaleFactor = 100 # kludge to make the kinect data look right
         reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
 
         limitedDissolve = False
         
-        inputPath = dca.file_path #don't forget the trailing /
+        # inputPath = dca.file_path #don't forget the trailing /
         outfileBase = dca.object_name
         maxDistance = dca.distance_threshold #any neighboring vertices farther than this will not be meshed
         nearDistanceClip = dca.distance_min #any pixel depth smaller than this will not be used
@@ -63,8 +54,10 @@ class DCA_OT_Preview(bpy.types.Operator):
 
         #bpy.data.images.load(inputPath)
         #img = bpy.data.images[bpy.path.basename(inputPath)]
+        if img.filepath != listImages[frame_current]:
+            img=bpy.data.images.load(listImages[frame_current])
         (width, height) = img.size
-        img.colorspace_settings.name="Raw" #we don't want no colorspace conversion for our distance data
+        img.colorspace_settings.name="Non-Color" #we don't want no colorspace conversion for our distance data
         pixels = zip_longest(*[iter(img.pixels)]*4)
         distances = []
         for (r, g, b, a) in pixels: #blender converts single channel grayscale png to RGBA because why *not* use 4x the memory
@@ -74,7 +67,7 @@ class DCA_OT_Preview(bpy.types.Operator):
             r=i%width
             c=i/width
             #print(r, c)
-            points.append(self.convertDistanceToXYZ(i%width, i/width, distances[i], width, height, scaleFactor))
+            points.append(convertDistanceToXYZ(i%width, i/width, distances[i], width, height, scaleFactor))
         faces = [ ]
         for row in range(0, height-reduceFactor, reduceFactor):
             for col in range(0, width-reduceFactor, reduceFactor):
@@ -88,10 +81,10 @@ class DCA_OT_Preview(bpy.types.Operator):
                 distance23 = ( (points[index2][0]- points[index3][0])**2 + (points[index2][1] - points[index3][1] )**2 + (points[index2][2] - points[index3][2])**2 )**0.5
                 isNWDistanceGood = (distance01 < maxDistance and distance02 < maxDistance)
                 isSEDistanceGood = (distance13 < maxDistance and distance23 < maxDistance)   
-                isPoint0Good = not (points[index0][0] == 0.0 and points[index0][1] == 0.0 and points[index0][2] == 0.0)
-                isPoint1Good = not (points[index1][0] == 0.0 and points[index1][1] == 0.0 and points[index1][2] == 0.0)
-                isPoint2Good = not (points[index2][0] == 0.0 and points[index2][1] == 0.0 and points[index2][2] == 0.0)
-                isPoint3Good = not (points[index3][0] == 0.0 and points[index3][1] == 0.0 and points[index3][2] == 0.0)        
+                isPoint0Good = (points[index0]!=[0.0, 0.0, 0.0] and points[index0][1] > nearDistanceClip and points[index0][1] < farDistanceClip)
+                isPoint1Good = (points[index1]!=[0.0, 0.0, 0.0] and points[index1][1] > nearDistanceClip and points[index1][1] < farDistanceClip)
+                isPoint2Good = (points[index2]!=[0.0, 0.0, 0.0] and points[index2][1] > nearDistanceClip and points[index2][1] < farDistanceClip)
+                isPoint3Good = (points[index3]!=[0.0, 0.0, 0.0] and points[index3][1] > nearDistanceClip and points[index3][1] < farDistanceClip)       
                 if isPoint0Good and isPoint1Good and isPoint2Good and isNWDistanceGood:
                     #add connects for the NW triangle
                     faces.append((index0, index1, index2))       

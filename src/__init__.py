@@ -46,7 +46,7 @@ class DCA_Properties(PropertyGroup):
         subtype="FACTOR",
         default=2, # 1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
         min=1,
-        max=320
+        max=16
     )
 
     distance_min: FloatProperty(
@@ -92,7 +92,8 @@ class DCA_Properties(PropertyGroup):
         default="",
     )
 
-from . depthcam_assist_operator import DCA_OT_Preview
+#from . depthcam_assist_functions import DCA_OT_Base
+from . depthcam_assist_preview import DCA_OT_Preview
 from . depthcam_assist_panel import DCA_PT_Panel
 
 classes = (

@@ -40,4 +40,4 @@ class DCA_PT_Panel(bpy.types.Panel):
         row.prop(dca, "object_name", text="")
 
         row = layout.row()
-        row.operator("view3d.dca_preview", text = "Preview")
+        row.operator("mesh.dca_preview", text = "Preview Frame")
