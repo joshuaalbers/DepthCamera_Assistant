@@ -94,10 +94,12 @@ class DCA_Properties(PropertyGroup):
 
 #from . depthcam_assist_functions import DCA_OT_Base
 from . depthcam_assist_preview import DCA_OT_Preview
+from . depthcam_assist_export import DCA_OT_Export
 from . depthcam_assist_panel import DCA_PT_Panel
 
 classes = (
     DCA_OT_Preview,
+    DCA_OT_Export,
     DCA_PT_Panel,
     DCA_Properties,
     )

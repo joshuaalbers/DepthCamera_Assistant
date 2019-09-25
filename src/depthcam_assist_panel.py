@@ -41,3 +41,6 @@ class DCA_PT_Panel(bpy.types.Panel):
 
         row = layout.row()
         row.operator("mesh.dca_preview", text = "Preview Frame")
+
+        row = layout.row()
+        row.operator("mesh.dca_export", text = "Export Sequence")

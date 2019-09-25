@@ -30,16 +30,10 @@ class DCA_OT_Preview(bpy.types.Operator):
 
         limitedDissolve = False
         
-        # inputPath = dca.file_path #don't forget the trailing /
         outfileBase = dca.object_name
         maxDistance = dca.distance_threshold #any neighboring vertices farther than this will not be meshed
-        nearDistanceClip = dca.distance_min #any pixel depth smaller than this will not be used
-        farDistanceClip = dca.distance_max #any pixel depth larger than this will not be used
-        
-        # outpathRoot = str(Path(inputPath).parents[0])+'/meshCache'
-        # if not os.path.exists(outpathRoot):
-        #     print('Creating '+outpathRoot)
-        #     os.makedirs(outpathRoot)
+        nearDistanceClip = dca.distance_min #any pixel distance smaller than this will not be used
+        farDistanceClip = dca.distance_max #any pixel distance larger than this will not be used
 
         #https://blender.stackexchange.com/questions/23433/how-to-assign-a-new-material-to-an-object-in-the-scene-from-python#23434
         mat = bpy.data.materials.get("ScanMaterial")
