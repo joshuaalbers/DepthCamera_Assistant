@@ -15,22 +15,16 @@ class DCA_OT_Export(bpy.types.Operator):
         dca = scene.dca
         img=context.space_data.image
         imguser=context.space_data.image_user
-        
-        # if img == None:
-        #     #print(context.space_data.image)
-        #     print("DEPTH CAM ASSIST: You have to select an image file first.")
-        #     return {'FINISHED'}
+        limitedDissolve = False
 
-        if bpy.ops.object.select_all.poll():
-            bpy.ops.object.select_all(action='DESELECT')
-        
-        # listImages=image_sequence_resolve_all(bpy.path.abspath(img.filepath, library=img.library))
-        #print("DEPTH CAM ASSIST: ", imguser.frame_start, imguser.frame_duration)
-        #print("DEPTH CAM ASSIST: EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
+        originalname=img.name
+        img.name='original'
+       
         scaleFactor = 100 # kludge to make the kinect data look right
         reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
 
-        limitedDissolve = False
+        if bpy.ops.object.select_all.poll():
+            bpy.ops.object.select_all(action='DESELECT')
         
         outfileBase = dca.object_name
         outpathRoot = str(Path(bpy.path.abspath(img.filepath)).parents[1])+'/meshCache'
@@ -43,33 +37,20 @@ class DCA_OT_Export(bpy.types.Operator):
         if mat is None:
             # create material
             mat = bpy.data.materials.new(name="ScanMaterial")
-
-        #set the cursor to the origin
-        # bpy.data.scenes['Scene'].cursor.location[0] = 0
-        # bpy.data.scenes['Scene'].cursor.location[1] = 0
-        # bpy.data.scenes['Scene'].cursor.location[2] = 0
         
-        for i in range(imguser.frame_start + imguser.frame_offset, imguser.frame_start + imguser.frame_offset + imguser.frame_duration):
+        for i in range(imguser.frame_start, imguser.frame_start + imguser.frame_duration):
             maxDistance = dca.distance_threshold #any neighboring vertices farther than this will not be meshed
             nearDistanceClip = dca.distance_min #any pixel distance smaller than this will not be used
             farDistanceClip = dca.distance_max #any pixel distance larger than this will not be used
-            originalname=img.name
-            img.name='original'
+            
+            scene.frame_set(i)
 
-            bpy.data.scenes["Scene"].frame_set(i)
-            # frame_current=imguser.frame_current
+            print("TESTING: ", scene.frame_current, imguser.frame_current, img.filepath_from_user(image_user=imguser))
+            depthimg=bpy.data.images.load(img.filepath_from_user(image_user=imguser))
 
-            #bpy.data.images.load(inputPath)
-            #img = bpy.data.images[bpy.path.basename(inputPath)]
-            # print("TESTING: ", listImages[frame_current])
-            print("TESTING: ", imguser.frame_current, img.filepath_from_user())
-            # if img.filepath != listImages[frame_current]:
-            #     img=bpy.data.images.load(listImages[frame_current])
-            #depthimg=bpy.data.images.load(img.filepath_from_user())
-
-            (width, height) = img.size
-            img.colorspace_settings.name="Non-Color" #we don't want no colorspace conversion for our distance data
-            pixels = zip_longest(*[iter(img.pixels)]*4)
+            (width, height) = depthimg.size
+            depthimg.colorspace_settings.name="Non-Color" #we don't want no colorspace conversion for our distance data
+            pixels = zip_longest(*[iter(depthimg.pixels)]*4)
             distances = []
             for (r, g, b, a) in pixels: #blender converts single channel grayscale png to RGBA because why *not* use 4x the memory
                 distances.append( r )
@@ -107,8 +88,7 @@ class DCA_OT_Export(bpy.types.Operator):
             
             object = bpy.data.objects.new(outfileBase, mesh)
             object.location = bpy.context.scene.cursor.location
-            # Link active object to the new collection
-            bpy.context.collection.objects.link(object)
+            bpy.context.collection.objects.link(object) # Link active object to the new collection
             bpy.context.view_layer.objects.active = object
             mesh.from_pydata(points, [], faces)
             mesh.update(calc_edges=True)
@@ -130,15 +110,14 @@ class DCA_OT_Export(bpy.types.Operator):
                 bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
             if bpy.ops.object.mode_set.poll():
                 bpy.ops.object.mode_set(mode='OBJECT')
-            #new_object = bpy.context.object
             bpy.ops.object.shade_smooth()
 
-            #bpy.data.images.remove(img) #unload that image to make life better for everyone
             outfileName = outpathRoot+'/'+outfileBase+"_%05d.abc"%(imguser.frame_current)
             print("Saving " + outfileName)
             bpy.ops.wm.alembic_export(filepath=outfileName, start=imguser.frame_current, end=imguser.frame_current+1, selected=True, as_background_job=False)
-            bpy.ops.object.delete() #delete the object
-            # bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
-            img.name=originalname
+            bpy.ops.object.delete() #delete the object so we don't cram our memory too much
+            bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
+        
+        img.name=originalname
 
         return {'FINISHED'}

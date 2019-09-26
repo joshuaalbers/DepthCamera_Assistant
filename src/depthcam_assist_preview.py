@@ -15,22 +15,12 @@ class DCA_OT_Preview(bpy.types.Operator):
         dca = scene.dca
         img=context.space_data.image
         imguser=context.space_data.image_user
-        # frame_current=imguser.frame_current
         originalname=img.name
         img.name='original'
-
-        # if img == None:
-        #     #print(context.space_data.image)
-        #     print("DEPTH CAM ASSIST: You have to select an image file first.")
-        #     return {'FINISHED'}
 
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
         
-        # listImages=image_sequence_resolve_all(bpy.path.abspath(img.filepath, library=img.library))
-        # print("DEPTH CAM ASSIST: ", img.filepath_from_user(), imguser.frame_current, img.source)
-        print("TESTING: ", imguser.frame_current, img.filepath_from_user())
-        # print("DEPTH CAM ASSIST: EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
         scaleFactor = 100 # kludge to make the kinect data look right
         reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
 
@@ -47,16 +37,7 @@ class DCA_OT_Preview(bpy.types.Operator):
             # create material
             mat = bpy.data.materials.new(name="ScanMaterial")
 
-        #set the cursor to the origin
-        # bpy.data.scenes['Scene'].cursor.location[0] = 0
-        # bpy.data.scenes['Scene'].cursor.location[1] = 0
-        # bpy.data.scenes['Scene'].cursor.location[2] = 0
-
-        bpy.data.scenes["Scene"].frame_set(scene.frame_current)
-
-        #bpy.data.images.load(inputPath)
-        #img = bpy.data.images[bpy.path.basename(inputPath)]
-        depthimg=bpy.data.images.load(img.filepath_from_user())
+        depthimg=bpy.data.images.load(img.filepath_from_user(image_user=imguser))
 
         (width, height) = depthimg.size
         depthimg.colorspace_settings.name="Non-Color" #we don't want no colorspace conversion for our distance data

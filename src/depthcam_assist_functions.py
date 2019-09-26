@@ -13,7 +13,7 @@ def convertDistanceToXYZ(col, row, distance, w, h, unit_scale):
     output = (x, z, y)
     return( output )
 
-def image_sequence_resolve_all(filepath):
+def image_sequence_resolve_all(filepath): #hey maybe I can delete this
     from os import path, scandir
     from string import digits
     basedir, filename = path.split(filepath)
