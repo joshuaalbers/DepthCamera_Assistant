@@ -15,16 +15,22 @@ class DCA_OT_Preview(bpy.types.Operator):
         dca = scene.dca
         img=context.space_data.image
         imguser=context.space_data.image_user
-        frame_current=imguser.frame_current
+        # frame_current=imguser.frame_current
+        originalname=img.name
+        img.name='original'
 
-        if img == None:
-            #print(context.space_data.image)
-            print("DEPTH CAM ASSIST: You have to select an image file first.")
-            return {'FINISHED'}
+        # if img == None:
+        #     #print(context.space_data.image)
+        #     print("DEPTH CAM ASSIST: You have to select an image file first.")
+        #     return {'FINISHED'}
+
+        if bpy.ops.object.select_all.poll():
+            bpy.ops.object.select_all(action='DESELECT')
         
-        listImages=image_sequence_resolve_all(img.filepath)
-        print("DEPTH CAM ASSIST: ", imguser.frame_start, imguser.frame_duration)
-        print("DEPTH CAM ASSIST: EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
+        # listImages=image_sequence_resolve_all(bpy.path.abspath(img.filepath, library=img.library))
+        # print("DEPTH CAM ASSIST: ", img.filepath_from_user(), imguser.frame_current, img.source)
+        print("TESTING: ", imguser.frame_current, img.filepath_from_user())
+        # print("DEPTH CAM ASSIST: EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
         scaleFactor = 100 # kludge to make the kinect data look right
         reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
 
@@ -42,17 +48,19 @@ class DCA_OT_Preview(bpy.types.Operator):
             mat = bpy.data.materials.new(name="ScanMaterial")
 
         #set the cursor to the origin
-        bpy.data.scenes['Scene'].cursor.location[0] = 0
-        bpy.data.scenes['Scene'].cursor.location[1] = 0
-        bpy.data.scenes['Scene'].cursor.location[2] = 0
+        # bpy.data.scenes['Scene'].cursor.location[0] = 0
+        # bpy.data.scenes['Scene'].cursor.location[1] = 0
+        # bpy.data.scenes['Scene'].cursor.location[2] = 0
+
+        bpy.data.scenes["Scene"].frame_set(scene.frame_current)
 
         #bpy.data.images.load(inputPath)
         #img = bpy.data.images[bpy.path.basename(inputPath)]
-        if img.filepath != listImages[frame_current]:
-            img=bpy.data.images.load(listImages[frame_current])
-        (width, height) = img.size
-        img.colorspace_settings.name="Non-Color" #we don't want no colorspace conversion for our distance data
-        pixels = zip_longest(*[iter(img.pixels)]*4)
+        depthimg=bpy.data.images.load(img.filepath_from_user())
+
+        (width, height) = depthimg.size
+        depthimg.colorspace_settings.name="Non-Color" #we don't want no colorspace conversion for our distance data
+        pixels = zip_longest(*[iter(depthimg.pixels)]*4)
         distances = []
         for (r, g, b, a) in pixels: #blender converts single channel grayscale png to RGBA because why *not* use 4x the memory
             distances.append( r )
@@ -116,6 +124,7 @@ class DCA_OT_Preview(bpy.types.Operator):
         #new_object = bpy.context.object
         bpy.ops.object.shade_smooth()
 
-        #bpy.data.images.remove(img) #unload that image to make life better for everyone
+        bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
+        img.name=originalname
 
         return {'FINISHED'}

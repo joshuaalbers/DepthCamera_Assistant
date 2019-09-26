@@ -17,30 +17,35 @@ class DCA_PT_Panel(bpy.types.Panel):
         scene = context.scene
         dca = scene.dca
         sima = context.space_data
+        ima = sima.image
 
         row = layout.row()
         
         #row.prop(dca, "file_path", text="")
         layout.template_ID(sima, "image", open="image.open")
-        #layout.operator("image.open", text="Open...", icon='FILE_FOLDER')
+        if ima:
+            row = layout.row()
 
-        row = layout.row()
-        row.prop(dca, "reduce_factor", text="")
+            row = layout.row()
+            row.prop(dca, "reduce_factor", text="Reduce Factor")
 
-        row = layout.row()
-        row.prop(dca, "distance_min", text="")
+            row = layout.row()
+            row.prop(dca, "distance_min", text="Min Distance")
 
-        row = layout.row()
-        row.prop(dca, "distance_max", text="")
+            row = layout.row()
+            row.prop(dca, "distance_max", text="Max Distance")
 
-        row = layout.row()
-        row.prop(dca, "distance_threshold", text="")
+            row = layout.row()
+            row.prop(dca, "distance_threshold", text="Point Threshold")
 
-        row = layout.row()
-        row.prop(dca, "object_name", text="")
+            row = layout.row()
+            row.prop(scene, "frame_current", text="Current Scene Frame")
 
-        row = layout.row()
-        row.operator("mesh.dca_preview", text = "Preview Frame")
+            row = layout.row()
+            row.prop(dca, "object_name", text="Object Name")
 
-        row = layout.row()
-        row.operator("mesh.dca_export", text = "Export Sequence")
+            row = layout.row()
+            row.operator("mesh.dca_preview", text = "Preview Frame")
+
+            row = layout.row()
+            row.operator("mesh.dca_export", text = "Export Sequence")

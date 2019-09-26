@@ -15,22 +15,25 @@ class DCA_OT_Export(bpy.types.Operator):
         dca = scene.dca
         img=context.space_data.image
         imguser=context.space_data.image_user
-
-        if img == None:
-            #print(context.space_data.image)
-            print("DEPTH CAM ASSIST: You have to select an image file first.")
-            return {'FINISHED'}
         
-        listImages=image_sequence_resolve_all(img.filepath)
-        print("DEPTH CAM ASSIST: ", imguser.frame_start, imguser.frame_duration)
-        print("DEPTH CAM ASSIST: EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
+        # if img == None:
+        #     #print(context.space_data.image)
+        #     print("DEPTH CAM ASSIST: You have to select an image file first.")
+        #     return {'FINISHED'}
+
+        if bpy.ops.object.select_all.poll():
+            bpy.ops.object.select_all(action='DESELECT')
+        
+        # listImages=image_sequence_resolve_all(bpy.path.abspath(img.filepath, library=img.library))
+        #print("DEPTH CAM ASSIST: ", imguser.frame_start, imguser.frame_duration)
+        #print("DEPTH CAM ASSIST: EXECUTE\tValues:", dca.distance_min, dca.distance_max, dca.distance_threshold, dca.object_name, sep=', ', end='\n')
         scaleFactor = 100 # kludge to make the kinect data look right
         reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
 
         limitedDissolve = False
         
         outfileBase = dca.object_name
-        outpathRoot = str(Path(img.filepath).parents[1])+'/meshCache'
+        outpathRoot = str(Path(bpy.path.abspath(img.filepath)).parents[1])+'/meshCache'
         if not os.path.exists(outpathRoot):
             print('DEPTH CAM ASSIST: Creating '+outpathRoot)
             os.makedirs(outpathRoot)
@@ -42,23 +45,28 @@ class DCA_OT_Export(bpy.types.Operator):
             mat = bpy.data.materials.new(name="ScanMaterial")
 
         #set the cursor to the origin
-        bpy.data.scenes['Scene'].cursor.location[0] = 0
-        bpy.data.scenes['Scene'].cursor.location[1] = 0
-        bpy.data.scenes['Scene'].cursor.location[2] = 0
+        # bpy.data.scenes['Scene'].cursor.location[0] = 0
+        # bpy.data.scenes['Scene'].cursor.location[1] = 0
+        # bpy.data.scenes['Scene'].cursor.location[2] = 0
         
-        for i in range(bpy.data.scenes["Scene"].frame_start, imguser.frame_duration):
+        for i in range(imguser.frame_start + imguser.frame_offset, imguser.frame_start + imguser.frame_offset + imguser.frame_duration):
             maxDistance = dca.distance_threshold #any neighboring vertices farther than this will not be meshed
             nearDistanceClip = dca.distance_min #any pixel distance smaller than this will not be used
             farDistanceClip = dca.distance_max #any pixel distance larger than this will not be used
+            originalname=img.name
+            img.name='original'
 
             bpy.data.scenes["Scene"].frame_set(i)
-            frame_current=imguser.frame_current
+            # frame_current=imguser.frame_current
 
             #bpy.data.images.load(inputPath)
             #img = bpy.data.images[bpy.path.basename(inputPath)]
-            print("TESTING: ", outpathRoot, listImages[frame_current])
-            if img.filepath != listImages[frame_current]:
-                img=bpy.data.images.load(listImages[frame_current])
+            # print("TESTING: ", listImages[frame_current])
+            print("TESTING: ", imguser.frame_current, img.filepath_from_user())
+            # if img.filepath != listImages[frame_current]:
+            #     img=bpy.data.images.load(listImages[frame_current])
+            #depthimg=bpy.data.images.load(img.filepath_from_user())
+
             (width, height) = img.size
             img.colorspace_settings.name="Non-Color" #we don't want no colorspace conversion for our distance data
             pixels = zip_longest(*[iter(img.pixels)]*4)
@@ -126,10 +134,11 @@ class DCA_OT_Export(bpy.types.Operator):
             bpy.ops.object.shade_smooth()
 
             #bpy.data.images.remove(img) #unload that image to make life better for everyone
-            outfileName = outpathRoot+'/'+outfileBase+"_%05d.abc"%(frame_current)
+            outfileName = outpathRoot+'/'+outfileBase+"_%05d.abc"%(imguser.frame_current)
             print("Saving " + outfileName)
-            bpy.ops.wm.alembic_export(filepath=outfileName, start=frame_current, end=frame_current+1, selected=True, as_background_job=False)
+            bpy.ops.wm.alembic_export(filepath=outfileName, start=imguser.frame_current, end=imguser.frame_current+1, selected=True, as_background_job=False)
             bpy.ops.object.delete() #delete the object
-            #bpy.data.images.remove(img) #unload that image to make life better for everyone
+            # bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
+            img.name=originalname
 
         return {'FINISHED'}
