@@ -44,6 +44,7 @@ class DCA_OT_Export(bpy.types.Operator):
             farDistanceClip = dca.distance_max #any pixel distance larger than this will not be used
             
             scene.frame_set(i)
+            imguser.frame_current=i
 
             print("TESTING: ", scene.frame_current, imguser.frame_current, img.filepath_from_user(image_user=imguser))
             depthimg=bpy.data.images.load(img.filepath_from_user(image_user=imguser))
