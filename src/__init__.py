@@ -85,11 +85,33 @@ class DCA_Properties(PropertyGroup):
         default="DepthCam",
     )
 
-    file_path: StringProperty(
-        name="File path",
-        description="Path to depth camera file(s)",
+    export_path: StringProperty(
+        name="Export path",
+        description="Location of exported files\nIf blank, default to meshcache folder in image source location",
         subtype='FILE_PATH',
         default="",
+    )
+
+    export_start_frame: IntProperty(
+        name="Export start frame",
+        description="Export sequence starting frame (affected by frame offset)\nValues exceeding number of images in sequence will be ignored",
+        #subtype="",
+        default=1,
+        min=1
+    )
+
+    export_duration: IntProperty(
+        name="Export duration",
+        description="Export sequence duration in frames\nIf 0, export entire sequence",
+        #subtype="",
+        default=0,
+        min=0
+    )
+
+    limited_dissolve: BoolProperty(
+        name="Limited dissolve",
+        description="Reduce faces in generated mesh using limited dissolve",
+        default=True
     )
 
 #from . depthcam_assist_functions import DCA_OT_Base

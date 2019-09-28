@@ -15,7 +15,11 @@ class DCA_OT_Export(bpy.types.Operator):
         dca = scene.dca
         img=context.space_data.image
         imguser=context.space_data.image_user
-        limitedDissolve = False
+        limitedDissolve = dca.limited_dissolve
+        export_start_frame = dca.export_start_frame
+        export_duration = dca.export_duration
+        if export_duration == 0:
+            export_duration = imguser.frame_duration
 
         originalname=img.name
         img.name='original'
@@ -26,8 +30,10 @@ class DCA_OT_Export(bpy.types.Operator):
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
         
-        outfileBase = dca.object_name
-        outpathRoot = str(Path(bpy.path.abspath(img.filepath)).parents[1])+'/meshCache'
+        object_name = dca.object_name
+        outpathRoot = bpy.path.abspath(dca.export_path)
+        if dca.export_path == "":
+            outpathRoot = str(Path(bpy.path.abspath(img.filepath)).parents[0])+'/meshCache'
         if not os.path.exists(outpathRoot):
             print('DEPTH CAM ASSIST: Creating '+outpathRoot)
             os.makedirs(outpathRoot)
@@ -38,13 +44,13 @@ class DCA_OT_Export(bpy.types.Operator):
             # create material
             mat = bpy.data.materials.new(name="ScanMaterial")
         
-        for i in range(imguser.frame_start, imguser.frame_start + imguser.frame_duration):
+        for i in range(export_start_frame, export_start_frame + export_duration):
             maxDistance = dca.distance_threshold #any neighboring vertices farther than this will not be meshed
             nearDistanceClip = dca.distance_min #any pixel distance smaller than this will not be used
             farDistanceClip = dca.distance_max #any pixel distance larger than this will not be used
             
             scene.frame_set(i)
-            imguser.frame_current=i
+            imguser.frame_current=i+imguser.frame_offset
 
             print("TESTING: ", scene.frame_current, imguser.frame_current, img.filepath_from_user(image_user=imguser))
             depthimg=bpy.data.images.load(img.filepath_from_user(image_user=imguser))
@@ -85,9 +91,9 @@ class DCA_OT_Export(bpy.types.Operator):
                         #add connects for the SE triangle
                         faces.append((index1, index3, index2))
 
-            mesh = bpy.data.meshes.new(outfileBase)
+            mesh = bpy.data.meshes.new(object_name)
             
-            object = bpy.data.objects.new(outfileBase, mesh)
+            object = bpy.data.objects.new(object_name, mesh)
             object.location = bpy.context.scene.cursor.location
             bpy.context.collection.objects.link(object) # Link active object to the new collection
             bpy.context.view_layer.objects.active = object
@@ -113,10 +119,11 @@ class DCA_OT_Export(bpy.types.Operator):
                 bpy.ops.object.mode_set(mode='OBJECT')
             bpy.ops.object.shade_smooth()
 
-            outfileName = outpathRoot+'/'+outfileBase+"_%05d.abc"%(imguser.frame_current)
+            outfileName = outpathRoot+'/'+object_name+"_%05d.abc"%(imguser.frame_current)
             print("Saving " + outfileName)
             bpy.ops.wm.alembic_export(filepath=outfileName, start=imguser.frame_current, end=imguser.frame_current+1, selected=True, as_background_job=False)
-            bpy.ops.object.delete() #delete the object so we don't cram our memory too much
+            bpy.data.meshes.remove(mesh)
+            #bpy.data.objects.remove(bpy.data.objects[object_name]) #delete the object so we don't cram our memory too much
             bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
         
         img.name=originalname

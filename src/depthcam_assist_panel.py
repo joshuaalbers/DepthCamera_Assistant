@@ -19,13 +19,8 @@ class DCA_PT_Panel(bpy.types.Panel):
         sima = context.space_data
         ima = sima.image
 
-        row = layout.row()
-        
-        #row.prop(dca, "file_path", text="")
         layout.template_ID(sima, "image", open="image.open")
         if ima:
-            row = layout.row()
-
             row = layout.row()
             row.prop(dca, "reduce_factor", text="Reduce Factor")
 
@@ -45,7 +40,20 @@ class DCA_PT_Panel(bpy.types.Panel):
             row.prop(dca, "object_name", text="Object Name")
 
             row = layout.row()
+            row.prop(dca, "limited_dissolve", text="Limited Dissolve", toggle=True)
+
+            row = layout.row()
             row.operator("mesh.dca_preview", text = "Preview Frame")
+
+            row = layout.row()
+            row.prop(dca, "export_start_frame", text="Export Start Frame")
+
+            row = layout.row()
+            row.prop(dca, "export_duration", text="Export Duration")
+
+            row = layout.row()
+            row.label(text="Export path:")
+            row.prop(dca, "export_path", text="")
 
             row = layout.row()
             row.operator("mesh.dca_export", text = "Export Sequence")

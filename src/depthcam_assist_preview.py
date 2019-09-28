@@ -24,7 +24,7 @@ class DCA_OT_Preview(bpy.types.Operator):
         scaleFactor = 100 # kludge to make the kinect data look right
         reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
 
-        limitedDissolve = False
+        limitedDissolve = dca.limited_dissolve
         
         outfileBase = dca.object_name
         maxDistance = dca.distance_threshold #any neighboring vertices farther than this will not be meshed
