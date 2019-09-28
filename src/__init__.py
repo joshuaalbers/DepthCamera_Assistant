@@ -111,7 +111,7 @@ class DCA_Properties(PropertyGroup):
     limited_dissolve: BoolProperty(
         name="Limited dissolve",
         description="Reduce faces in generated mesh using limited dissolve",
-        default=True
+        default=False
     )
 
 #from . depthcam_assist_functions import DCA_OT_Base
