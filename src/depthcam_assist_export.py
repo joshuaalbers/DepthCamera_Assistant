@@ -38,11 +38,11 @@ class DCA_OT_Export(bpy.types.Operator):
             print('DEPTH CAM ASSIST: Creating '+outpathRoot)
             os.makedirs(outpathRoot)
 
-        #https://blender.stackexchange.com/questions/23433/how-to-assign-a-new-material-to-an-object-in-the-scene-from-python#23434
-        mat = bpy.data.materials.get("ScanMaterial")
-        if mat is None:
-            # create material
-            mat = bpy.data.materials.new(name="ScanMaterial")
+        # #https://blender.stackexchange.com/questions/23433/how-to-assign-a-new-material-to-an-object-in-the-scene-from-python#23434
+        # mat = bpy.data.materials.get("ScanMaterial")
+        # if mat is None:
+        #     # create material
+        #     mat = bpy.data.materials.new(name="ScanMaterial")
         
         for i in range(export_start_frame, export_start_frame + export_duration):
             maxDistance = dca.distance_threshold #any neighboring vertices farther than this will not be meshed
@@ -52,7 +52,7 @@ class DCA_OT_Export(bpy.types.Operator):
             scene.frame_set(i)
             imguser.frame_current=i+imguser.frame_offset
 
-            print("TESTING: ", scene.frame_current, imguser.frame_current, img.filepath_from_user(image_user=imguser))
+            print("DEPTH CAM ASSIST: ", scene.frame_current, imguser.frame_current, img.filepath_from_user(image_user=imguser))
             depthimg=bpy.data.images.load(img.filepath_from_user(image_user=imguser))
 
             (width, height) = depthimg.size
@@ -61,6 +61,8 @@ class DCA_OT_Export(bpy.types.Operator):
             distances = []
             for (r, g, b, a) in pixels: #blender converts single channel grayscale png to RGBA because why *not* use 4x the memory
                 distances.append( r )
+            bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
+
             points = []
             for i in range(0, len(distances), 1):
                 r=i%width
@@ -122,9 +124,7 @@ class DCA_OT_Export(bpy.types.Operator):
             outfileName = outpathRoot+'/'+object_name+"_%05d.abc"%(imguser.frame_current)
             print("Saving " + outfileName)
             bpy.ops.wm.alembic_export(filepath=outfileName, start=imguser.frame_current, end=imguser.frame_current+1, selected=True, as_background_job=False)
-            bpy.data.meshes.remove(mesh)
-            #bpy.data.objects.remove(bpy.data.objects[object_name]) #delete the object so we don't cram our memory too much
-            bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
+            bpy.data.meshes.remove(mesh) #so this apparently also deletes the object?
         
         img.name=originalname
 

@@ -15,27 +15,27 @@ class DCA_OT_Preview(bpy.types.Operator):
         dca = scene.dca
         img=context.space_data.image
         imguser=context.space_data.image_user
-        originalname=img.name
-        img.name='original'
-
-        if bpy.ops.object.select_all.poll():
-            bpy.ops.object.select_all(action='DESELECT')
-        
-        scaleFactor = 100 # kludge to make the kinect data look right
-        reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
-
         limitedDissolve = dca.limited_dissolve
-        
-        outfileBase = dca.object_name
         maxDistance = dca.distance_threshold #any neighboring vertices farther than this will not be meshed
         nearDistanceClip = dca.distance_min #any pixel distance smaller than this will not be used
         farDistanceClip = dca.distance_max #any pixel distance larger than this will not be used
 
-        #https://blender.stackexchange.com/questions/23433/how-to-assign-a-new-material-to-an-object-in-the-scene-from-python#23434
-        mat = bpy.data.materials.get("ScanMaterial")
-        if mat is None:
-            # create material
-            mat = bpy.data.materials.new(name="ScanMaterial")
+        originalname=img.name
+        img.name='original'
+       
+        scaleFactor = 100 # kludge to make the kinect data look right
+        reduceFactor = dca.reduce_factor #1 = 1/1, 2 = 1/2, 3 = 1/3, et cetera
+        
+        if bpy.ops.object.select_all.poll():
+            bpy.ops.object.select_all(action='DESELECT')
+
+        object_name = dca.object_name
+        
+        # #https://blender.stackexchange.com/questions/23433/how-to-assign-a-new-material-to-an-object-in-the-scene-from-python#23434
+        # mat = bpy.data.materials.get("ScanMaterial")
+        # if mat is None:
+        #     # create material
+        #     mat = bpy.data.materials.new(name="ScanMaterial")
 
         depthimg=bpy.data.images.load(img.filepath_from_user(image_user=imguser))
 
@@ -45,6 +45,8 @@ class DCA_OT_Preview(bpy.types.Operator):
         distances = []
         for (r, g, b, a) in pixels: #blender converts single channel grayscale png to RGBA because why *not* use 4x the memory
             distances.append( r )
+        bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
+
         points = []
         for i in range(0, len(distances), 1):
             r=i%width
@@ -75,12 +77,11 @@ class DCA_OT_Preview(bpy.types.Operator):
                     #add connects for the SE triangle
                     faces.append((index1, index3, index2))
 
-        mesh = bpy.data.meshes.new(outfileBase)
+        mesh = bpy.data.meshes.new(object_name)
         
-        object = bpy.data.objects.new(outfileBase, mesh)
+        object = bpy.data.objects.new(object_name, mesh)
         object.location = bpy.context.scene.cursor.location
-        # Link active object to the new collection
-        bpy.context.collection.objects.link(object)
+        bpy.context.collection.objects.link(object) # Link active object to the new collection
         bpy.context.view_layer.objects.active = object
         mesh.from_pydata(points, [], faces)
         mesh.update(calc_edges=True)
@@ -102,10 +103,8 @@ class DCA_OT_Preview(bpy.types.Operator):
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
         if bpy.ops.object.mode_set.poll():
             bpy.ops.object.mode_set(mode='OBJECT')
-        #new_object = bpy.context.object
         bpy.ops.object.shade_smooth()
 
-        bpy.data.images.remove(depthimg) #unload that image to make life better for everyone
         img.name=originalname
 
         return {'FINISHED'}
