@@ -29,7 +29,7 @@ class DCA_OT_Preview(bpy.types.Operator):
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
 
-        object_name = dca.object_name
+        object_name = dca.object_name + '_' + str(imguser.frame_current).zfill(5)
         
         # #https://blender.stackexchange.com/questions/23433/how-to-assign-a-new-material-to-an-object-in-the-scene-from-python#23434
         # mat = bpy.data.materials.get("ScanMaterial")
